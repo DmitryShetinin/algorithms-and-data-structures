@@ -23,15 +23,27 @@ public:
         }
     };
 
+  
+
 protected:
     Node* head = NULL;
     Node* tail = NULL;
     int size = 0;
 
+    bool isAllowed(int index) {
+        if (index > size || index < 0) {
+            std::cout << "Недопустимый индекс!" << std::endl;
+            return true;
+        }
+
+        return false;
+    }
+
+
 public:
     Node* toIndex(int index) {
         
-        if (index > size || index < 0) {
+        if (isAllowed(index)) {
             return new Node(-1); 
         }
 
@@ -76,6 +88,11 @@ public:
     }
 
     void removeAt(int index = 0) {
+
+        if (isAllowed(index)) {      
+            return;
+        }
+
         Node* temp = toIndex(index);
         if (temp == NULL) return; 
 
@@ -208,6 +225,113 @@ public:
     }
 };
  
+
+template <typename T>
+class DynamicArray {
+private:
+    T* arr;
+    int size;
+    int capacity;
+
+public:
+    DynamicArray() {
+        capacity = 10;
+        size = 0;
+        arr = new T[capacity];
+    }
+
+    ~DynamicArray() {
+        delete[] arr;
+    }
+
+    void insertAt(int index, T value) {
+        if (index < 0 || index > size) {
+            std::cout << "Недопустимый индекс!" << std::endl;
+            return;
+        }
+
+        if (size == capacity) {
+            resize();
+        }
+
+        for (int i = size; i > index; i--) {
+            arr[i] = arr[i - 1];
+        }
+
+        arr[index] = value;
+        size++;
+    }
+
+    void remove(T value) {
+        int index = -1;
+
+        for (int i = 0; i < size; i++) {
+            if (arr[i] == value) {
+                index = i;
+                break;
+            }
+        }
+
+        if (index != -1) {
+            removeAt(index);
+        }
+        else {
+            std::cout << "Элемент не найден!" << std::endl;
+        }
+    }
+
+    void removeAt(int index) {
+        if (index < 0 || index >= size) {
+            std::cout << "Недопустимый индекс!" << std::endl;
+            return;
+        }
+
+        for (int i = index; i < size - 1; i++) {
+            arr[i] = arr[i + 1];
+        }
+
+        size--;
+    }
+
+    void append(T value) {
+        if (size == capacity) {
+            resize();
+        }
+
+        arr[size] = value;
+        size++;
+    }
+
+    T get(int index) {
+        if (index < 0 || index >= size) {
+            std::cout << "Недопустимый индекс!" << std::endl;
+            return T();
+        }
+
+        return arr[index];
+    }
+
+    int getCapacity() {
+        return capacity;
+    }
+
+private:
+    void resize() {
+        capacity *= 2;
+        T* newArr = new T[capacity];
+
+        for (int i = 0; i < size; i++) {
+            newArr[i] = arr[i];
+        }
+
+        delete[] arr;
+        arr = newArr;
+    }
+};
+
+
+
+
 bool isOperator(char c) {
     return (c == '+' || c == '-' || c == '*' || c == '/');
 }
@@ -335,15 +459,19 @@ std::string infixToPostfix(std::string expression) {
 int main()
 {
     
-    std::string expression;
+  /*  std::string expression;
     std::cout << "Enter an expression in Reverse Polish Notation: ";
     std::getline(std::cin, expression);
 
     double result = evaluateExpression(expression);
     std::cout << "Postfix expression: " << infixToPostfix(expression) << std::endl;
-    std::cout << "Result: " << result << std::endl;
+    std::cout << "Result: " << result << std::endl;*/
 
+    DoubleLinkedList<int> ms; 
 
+    ms.push_front(1);
+    ms.push_back(12); 
+    ms.removeAt(12); 
 
     return 0;
     
