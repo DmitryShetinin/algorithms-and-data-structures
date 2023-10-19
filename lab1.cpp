@@ -341,13 +341,11 @@ private:
 
 
 
-class InvalidInput : public std::invalid_argument {
+class Exception : public std::invalid_argument {
     using std::invalid_argument::invalid_argument;
 };
 
-class SyntaxError : public std::invalid_argument {
-    using std::invalid_argument::invalid_argument;
-};
+ 
 
 
 
@@ -425,7 +423,7 @@ struct Token {
             type = Type::RightBrace;
         }
         else {
-            throw InvalidInput("Excepted brace");
+            throw Exception("Excepted brace");
         }
     }
 
@@ -474,7 +472,7 @@ string constructNumber(string::const_iterator& it, string::const_iterator end) {
         value += *it;
         if (*it == '.') {
             if (dotExists) {
-                throw InvalidInput("Invalid number in input");
+                throw Exception("Invalid number in input");
             }
             else {
                 dotExists = true;
@@ -483,7 +481,7 @@ string constructNumber(string::const_iterator& it, string::const_iterator end) {
         it++;
     }
     if (value.empty()) {
-        throw InvalidInput("Excepted a number, but nothing found");
+        throw Exception("Excepted a number, but nothing found");
     }
     return value;
 }
@@ -494,7 +492,7 @@ string constructName(string::const_iterator& it, string::const_iterator end) {
         it++;
     }
     if (value.empty()) {
-        throw InvalidInput("Excepted a name, nothing found");
+        throw Exception("Excepted a name, nothing found");
     }
     return value;
 }
@@ -516,7 +514,7 @@ std::vector<Token> tokenize(const std::string& expression) {
             if (!tokens.empty() && (tokens.back().type != Token::Type::Operator &&
                 tokens.back().type != Token::Type::LeftBrace &&
                 tokens.back().type != Token::Type::ArgsSep)) {
-                throw SyntaxError("Missing '(' or ',' or operator  before number");
+                throw Exception("Missing '(' or ',' or operator  before number");
             }
             string numberStr = constructNumber(it, expression.cend());
             double number = stod(numberStr);
@@ -532,7 +530,7 @@ std::vector<Token> tokenize(const std::string& expression) {
             else {  // check binary operators
                 if (!tokens.empty() && (tokens.back().type != Token::Type::Number &&
                     tokens.back().type != Token::Type::RightBrace)) {
-                    throw SyntaxError("Missing ')' or number before binary operator");
+                    throw Exception("Missing ')' or number before binary operator");
                 }
             }
             tokens.emplace(tokens.end(), oper);
@@ -542,7 +540,7 @@ std::vector<Token> tokenize(const std::string& expression) {
                 tokens.back().type != Token::Type::Function &&
                 tokens.back().type != Token::Type::LeftBrace &&
                 tokens.back().type != Token::Type::ArgsSep)) {
-                throw SyntaxError("Missing '(' or ',' or operator or function before '('");
+                throw Exception("Missing '(' or ',' or operator or function before '('");
             }
             tokens.emplace(tokens.end(), *it);
             minusState = MinusState::UNARY;
@@ -550,7 +548,7 @@ std::vector<Token> tokenize(const std::string& expression) {
         else if (*it == ')') {
             if (!tokens.empty() && (tokens.back().type != Token::Type::Number &&
                 tokens.back().type != Token::Type::RightBrace)) {
-                throw SyntaxError("Missing ')' or number before ')'");
+                throw Exception("Missing ')' or number before ')'");
             }
             tokens.emplace(tokens.end(), *it);
             minusState = MinusState::BINARY;
@@ -559,7 +557,7 @@ std::vector<Token> tokenize(const std::string& expression) {
             if (tokens.empty() ||
                 !tokens.empty() && (tokens.back().type != Token::Type::Number &&
                     tokens.back().type != Token::Type::RightBrace)) {
-                throw SyntaxError("Missing ')' or number before ','");
+                throw Exception("Missing ')' or number before ','");
             }
             tokens.emplace(tokens.end(), Token::Type::ArgsSep);
             minusState = MinusState::UNARY;
@@ -568,7 +566,7 @@ std::vector<Token> tokenize(const std::string& expression) {
             if (!tokens.empty() && (tokens.back().type != Token::Type::Operator &&
                 tokens.back().type != Token::Type::LeftBrace &&
                 tokens.back().type != Token::Type::ArgsSep)) {
-                throw SyntaxError("Missing operator before function");
+                throw Exception("Missing operator before function");
             }
             string name = constructName(it, expression.cend());
             functionIt = functions.find(name);
@@ -576,13 +574,13 @@ std::vector<Token> tokenize(const std::string& expression) {
                 tokens.emplace(tokens.end(), functionIt->second);
             }
             else {
-                throw InvalidInput("Function not exists: " + name);
+                throw Exception("Function not exists: " + name);
             }
             minusState = MinusState::BINARY;
             continue;
         }
         else {  // if no one case success
-            throw InvalidInput("Invalid char: " + string(1, *it));
+            throw Exception("Invalid char: " + string(1, *it));
         }
         ++it;
     }
@@ -613,7 +611,7 @@ std::vector<Token> shuntingYard(const std::vector<Token>& input) {
                 stack.removeAt();
             }
             if (!argsCheck) {
-                throw SyntaxError("Missing argument separator ',' or left brace '(' in expression");
+                throw Exception("Missing argument separator ',' or left brace '(' in expression");
             }
         }
         else if (token.type == Token::Type::Operator) {
@@ -656,7 +654,7 @@ std::vector<Token> shuntingYard(const std::vector<Token>& input) {
                 output.push_back(top);
             }
             if (!bracesCheck) {
-                throw SyntaxError("Missing left brace '(' in expression");
+                throw Exception("Missing left brace '(' in expression");
             }
         }
     }
@@ -665,7 +663,7 @@ std::vector<Token> shuntingYard(const std::vector<Token>& input) {
         Token top = stack.top();
         stack.removeAt();
         if (top.type == Token::Type::LeftBrace) {
-            throw SyntaxError("Missing right brace ')' in expression");
+            throw Exception("Missing right brace ')' in expression");
         }
         output.push_back(top);
     }
@@ -704,7 +702,7 @@ double eval(const std::vector<Token>& rpnExpression) {
         }
         else if (token.type == Token::Type::Operator) {
             if (stack.getSize() < 2) {
-                throw SyntaxError("Not enough operands for operator: " + token.value.oper->name);
+                throw Exception("Not enough operands for operator: " + token.value.oper->name);
             }
             double b = stack.top();
             stack.removeAt();
@@ -715,7 +713,7 @@ double eval(const std::vector<Token>& rpnExpression) {
         else if (token.type == Token::Type::Function) {
             size_t argc = token.value.func->argc;
             if (stack.getSize() < argc) {
-                throw SyntaxError("Not enough arguments for function: " + token.value.func->name);
+                throw Exception("Not enough arguments for function: " + token.value.func->name);
             }
             vector<double> args;
             for (size_t i = 0; i < argc; i++) {
@@ -725,11 +723,11 @@ double eval(const std::vector<Token>& rpnExpression) {
             stack.push_front(token.value.func->func(args));
         }
         else {
-            throw SyntaxError("In RPN met not allowed token: " + std::to_string(static_cast<int>(token.type)));
+            throw Exception("In RPN met not allowed token: " + std::to_string(static_cast<int>(token.type)));
         }
     }
     if (stack.getSize() > 1) {
-        throw SyntaxError("Calculation finished with stack size greater than 1");
+        throw Exception("Calculation finished with stack size greater than 1");
     }
     return stack.top();
 }
