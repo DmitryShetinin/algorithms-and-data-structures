@@ -1,8 +1,13 @@
 ﻿#include <iostream>
 #include <string>
 #include <vector>
-#include <deque>
-#include <stack>
+#include <unordered_map>
+#include <unordered_set>
+#include <stdexcept>
+#include <cmath>
+#include <cctype>
+ 
+
 
 
 using namespace std;
@@ -32,7 +37,7 @@ protected:
 
     bool isAllowed(int index) {
         if (index > size || index < 0) {
-            std::cout << "Недопустимый индекс!" << std::endl;
+            std::cout << "Index is not available!" << std::endl;
             return true;
         }
 
@@ -44,7 +49,7 @@ public:
     Node* toIndex(int index) {
         
         if (isAllowed(index)) {
-            return new Node(-1); 
+            return nullptr; 
         }
 
         int midle = (size / 2) + 1;
@@ -112,15 +117,18 @@ public:
     }
 
     T top() {
-        if (size == 0) {
-            return 0;
+
+        if (!isEmpty()) {
+            return head->Data;
         }
-        if (head == nullptr) return 0; 
-        return head->Data;
+        throw std::out_of_range("Stack is empty");
+    }
+
+    int getSize()const {
+        return size;
     }
 
 };
-
 template <typename T>
 class DoubleLinkedList : public MyStack<T>
 {
@@ -157,9 +165,7 @@ public:
     T operator [](int index) {
         return toIndex(index)->Data;
     }
-    int getSize()const {
-        return size;
-    }
+    
     friend std::ostream& operator<<(std::ostream& output, DoubleLinkedList<T>& list) {
         for (const T& value : list) {
             output << value;
@@ -224,14 +230,22 @@ public:
         return Iterator(nullptr);
     }
 };
- 
-
 template <typename T>
 class DynamicArray {
 private:
     T* arr;
     int size;
     int capacity;
+
+    bool AllowedIndex(int index) {
+        if (index < 0 || index >= size) {
+            std::cout << "Index is not available!" << std::endl;
+            return false;
+        }
+
+        return true;
+    }
+
 
 public:
     DynamicArray() {
@@ -244,11 +258,13 @@ public:
         delete[] arr;
     }
 
+
+    int getSize() {
+        return size; 
+    }
+
     void insertAt(int index, T value) {
-        if (index < 0 || index > size) {
-            std::cout << "Недопустимый индекс!" << std::endl;
-            return;
-        }
+        if (AllowedIndex(index)) return;
 
         if (size == capacity) {
             resize();
@@ -276,15 +292,12 @@ public:
             removeAt(index);
         }
         else {
-            std::cout << "Элемент не найден!" << std::endl;
+            std::cout << "Element is not found!" << std::endl;
         }
     }
 
     void removeAt(int index) {
-        if (index < 0 || index >= size) {
-            std::cout << "Недопустимый индекс!" << std::endl;
-            return;
-        }
+        if (AllowedIndex(index)) return;
 
         for (int i = index; i < size - 1; i++) {
             arr[i] = arr[i + 1];
@@ -303,11 +316,8 @@ public:
     }
 
     T get(int index) {
-        if (index < 0 || index >= size) {
-            std::cout << "Недопустимый индекс!" << std::endl;
-            return T();
-        }
-
+        
+        if(AllowedIndex(index)) return;
         return arr[index];
     }
 
@@ -331,149 +341,454 @@ private:
 
 
 
+class InvalidInput : public std::invalid_argument {
+    using std::invalid_argument::invalid_argument;
+};
 
-bool isOperator(char c) {
-    return (c == '+' || c == '-' || c == '*' || c == '/');
-}
-int precedence(char op) {
-    if (op == '+' || op == '-') {
-        return 1;
-    }
-    else if (op == '*' || op == '/') {
-        return 2;
-    }
-    return 0;
-}
+class SyntaxError : public std::invalid_argument {
+    using std::invalid_argument::invalid_argument;
+};
 
-double applyOperator(double a, double b, char op) {
-    switch (op) {
-    case '+':
-        return a + b;
-    case '-':
-        return a - b;
-    case '*':
-        return a * b;
-    case '/':
-        return a / b;
-    default:
-        return 0;
-    }
-}
-double evaluateExpression(const std::string& expression) {
-    MyStack<double> values;
-    MyStack<char> operators;
 
-    for (size_t i = 0; i < expression.length(); i++) {
-        if (expression[i] == ' ') {
-            continue;
-        }
-        else if (isdigit(expression[i])) {
-            double value = 0;
-            while (i < expression.length() && isdigit(expression[i])) {
-                value = value * 10 + (expression[i] - '0');
-                i++;
-            }
-            values.push_front(value);
-            i--;
-        }
-        else if (expression[i] == '(') {
-            operators.push_front(expression[i]);
-        }
-        else if (expression[i] == ')') {
-            while (!operators.isEmpty() && operators.top() != '(') {
-                double b = values.top();
-                values.removeAt();
-                double a = values.top();
-                values.removeAt();
-                char op = operators.top();
-                operators.removeAt();
-                values.push_front(applyOperator(a, b, op));
-            }
-            operators.removeAt();
-        }
-        else if (isOperator(expression[i])) {
-            while (!operators.isEmpty() && precedence(operators.top()) >= precedence(expression[i])) {
-                double b = values.top();
-                values.removeAt();
-                double a = values.top();
-                values.removeAt();
-                char op = operators.top();
-                operators.removeAt();
-                values.push_front(applyOperator(a, b, op));
-            }
-            operators.push_front(expression[i]);
-        }
-    }
 
-    while (!operators.isEmpty()) {
-        double b = values.top();
-        values.removeAt();
-        double a = values.top();
-        values.removeAt();
-        char op = operators.top();
-        operators.removeAt();
-        values.push_front(applyOperator(a, b, op));
+struct Operator {
+    enum class Associativity {
+        Left = 0,
+        Right = 1
+    };
+
+    const std::string name;
+    unsigned int priority = 0;
+    Associativity assoc = Associativity::Left;
+    double(*func)(double, double);
+
+    Operator(const std::string& name,
+        unsigned int priority,
+        double(*func)(double, double),
+        Associativity assoc = Associativity::Left):
+        name(name),
+        priority(priority),
+        func(func) {}
+};
+
+struct Function {
+    const std::string name;
+    size_t argc = 1;
+    double(*func)(std::vector<double>&);
+
+    Function(const std::string& name, size_t argc, double (*func)(std::vector<double>& args)) :
+        name(name),
+        func(func),
+        argc(argc) {}
+};
+
+struct Token {
+    enum class Type {
+        Number = 0,
+        Operator,
+        Function,
+        LeftBrace,
+        RightBrace,
+        ArgsSep
+    };
+
+    union UValue {
+        double number = 0;
+        Operator* oper;
+        Function* func;
+    } value;
+
+    Type type = Type::Number;
+
+    Token() = default;
+    Token(Type type) {
+        this->type = type;
+    };
+    Token(double number) {
+        value.number = number;
+        type = Type::Number;
+    };
+    Token(Operator* oper) {
+        value.oper = oper;
+        type = Type::Operator;
+    };
+    Token(Function* func) {
+        value.func = func;
+        type = Type::Function;
     }
 
-    return values.top();
-}
-
-std::string infixToPostfix(std::string expression) {
-    expression.erase(std::remove_if(expression.begin(), expression.end(), [](char c) { return std::isspace(c); }), expression.end());
-
-    std::string postfix;
-    std::stack<char> operators;
-
-    for (char c : expression) {
-        if (isalnum(c)) {
-            postfix += c;
+    Token(char brace) {
+        if (brace == '(') {
+            type = Type::LeftBrace;
         }
-        else if (c == '(') {
-            operators.push(c);
-        }
-        else if (c == ')') {
-            while (!operators.empty() && operators.top() != '(') {
-                postfix += operators.top();
-                operators.pop();
-            }
-            operators.pop(); // Remove the '('
+        else if (brace == ')') {
+            type = Type::RightBrace;
         }
         else {
-            while (!operators.empty() && precedence(c) <= precedence(operators.top())) {
-                postfix += operators.top();
-                operators.pop();
-            }
-            operators.push(c);
+            throw InvalidInput("Excepted brace");
         }
     }
 
-    while (!operators.empty()) {
-        postfix += operators.top();
-        operators.pop();
+};
+
+std::ostream& operator<<(std::ostream& stream, Token token);
+
+using OperatorMap = typename std::unordered_map<char, Operator*>;
+using FunctionMap = typename std::unordered_map<std::string, Function*>;
+
+const OperatorMap operators({
+        {'+', new Operator("+", 100, [](double a, double b) { return a + b; })},
+        {'-', new Operator("-", 100, [](double a, double b) { return a - b; })},
+        {'*', new Operator("*", 200, [](double a, double b) { return a * b; })},
+        {'/', new Operator("/", 200, [](double a, double b) { return a / b; })},
+        {'^', new Operator("^", 300, [](double a, double b) {
+            return std::pow(a, b);
+            }, Operator::Associativity::Right)}
+    });
+
+const FunctionMap functions({
+        {"sin", new Function("sin", 1, [](std::vector<double>& args) {
+            return std::sin(args[0]);
+        })},
+        {"cos", new Function("cos", 1, [](std::vector<double>& args) {
+            return std::cos(args[0]);
+        })},
+        {"pow", new Function("pow", 2, [](std::vector<double>& args) {
+            return std::pow(args[0], args[1]);
+        })}
+    });
+
+const std::unordered_set<char> whitespaces({
+        ' ', '\n', '\t'
+    });
+
+enum class MinusState {
+    UNARY = 0,
+    BINARY = 1
+};
+
+string constructNumber(string::const_iterator& it, string::const_iterator end) {
+    string value;
+    bool dotExists = false;
+    while (it != end && (isdigit(*it) || *it == '.')) {
+        value += *it;
+        if (*it == '.') {
+            if (dotExists) {
+                throw InvalidInput("Invalid number in input");
+            }
+            else {
+                dotExists = true;
+            }
+        }
+        it++;
+    }
+    if (value.empty()) {
+        throw InvalidInput("Excepted a number, but nothing found");
+    }
+    return value;
+}
+string constructName(string::const_iterator& it, string::const_iterator end) {
+    string value;
+    while (it != end && isalpha(*it)) {
+        value += *it;
+        it++;
+    }
+    if (value.empty()) {
+        throw InvalidInput("Excepted a name, nothing found");
+    }
+    return value;
+}
+
+std::vector<Token> tokenize(const std::string& expression) {
+    vector<Token> tokens;
+
+    OperatorMap::const_iterator operatorIt;
+    FunctionMap::const_iterator functionIt;
+    auto it = expression.cbegin();
+
+    MinusState minusState = MinusState::UNARY;
+
+    while (it != expression.cend()) {
+        if (whitespaces.find(*it) != whitespaces.cend()) {
+            // handle whitespace characters
+        }
+        else if (isdigit(*it) || *it == '.') {  // handle number
+            if (!tokens.empty() && (tokens.back().type != Token::Type::Operator &&
+                tokens.back().type != Token::Type::LeftBrace &&
+                tokens.back().type != Token::Type::ArgsSep)) {
+                throw SyntaxError("Missing '(' or ',' or operator  before number");
+            }
+            string numberStr = constructNumber(it, expression.cend());
+            double number = stod(numberStr);
+            tokens.emplace(tokens.end(), number);
+            minusState = MinusState::BINARY;
+            continue;
+        }
+        else if ((operatorIt = operators.find(*it)) != operators.cend()) {  // handle operator
+            Operator* oper = operatorIt->second;
+            if (minusState == MinusState::UNARY && oper->name == "-") {  // handle unary minus
+                tokens.emplace(tokens.end(), 0.0);
+            }
+            else {  // check binary operators
+                if (!tokens.empty() && (tokens.back().type != Token::Type::Number &&
+                    tokens.back().type != Token::Type::RightBrace)) {
+                    throw SyntaxError("Missing ')' or number before binary operator");
+                }
+            }
+            tokens.emplace(tokens.end(), oper);
+        }
+        else if (*it == '(') {
+            if (!tokens.empty() && (tokens.back().type != Token::Type::Operator &&
+                tokens.back().type != Token::Type::Function &&
+                tokens.back().type != Token::Type::LeftBrace &&
+                tokens.back().type != Token::Type::ArgsSep)) {
+                throw SyntaxError("Missing '(' or ',' or operator or function before '('");
+            }
+            tokens.emplace(tokens.end(), *it);
+            minusState = MinusState::UNARY;
+        }
+        else if (*it == ')') {
+            if (!tokens.empty() && (tokens.back().type != Token::Type::Number &&
+                tokens.back().type != Token::Type::RightBrace)) {
+                throw SyntaxError("Missing ')' or number before ')'");
+            }
+            tokens.emplace(tokens.end(), *it);
+            minusState = MinusState::BINARY;
+        }
+        else if (*it == ',') {
+            if (tokens.empty() ||
+                !tokens.empty() && (tokens.back().type != Token::Type::Number &&
+                    tokens.back().type != Token::Type::RightBrace)) {
+                throw SyntaxError("Missing ')' or number before ','");
+            }
+            tokens.emplace(tokens.end(), Token::Type::ArgsSep);
+            minusState = MinusState::UNARY;
+        }
+        else if (isalpha(*it)) {  // handle function name
+            if (!tokens.empty() && (tokens.back().type != Token::Type::Operator &&
+                tokens.back().type != Token::Type::LeftBrace &&
+                tokens.back().type != Token::Type::ArgsSep)) {
+                throw SyntaxError("Missing operator before function");
+            }
+            string name = constructName(it, expression.cend());
+            functionIt = functions.find(name);
+            if (functionIt != functions.cend()) {
+                tokens.emplace(tokens.end(), functionIt->second);
+            }
+            else {
+                throw InvalidInput("Function not exists: " + name);
+            }
+            minusState = MinusState::BINARY;
+            continue;
+        }
+        else {  // if no one case success
+            throw InvalidInput("Invalid char: " + string(1, *it));
+        }
+        ++it;
     }
 
-    return postfix;
+    return tokens;
 }
+std::vector<Token> shuntingYard(const std::vector<Token>& input) {
+    MyStack<Token> stack;
+    vector<Token> output;
+
+    for (auto&& token : input) {
+        if (token.type == Token::Type::Number) {
+            output.push_back(token);
+        }
+        else if (token.type == Token::Type::Function) {
+            stack.push_front(token);
+        }
+        else if (token.type == Token::Type::ArgsSep) {
+            Token top;
+            bool argsCheck = false;
+            while (!stack.isEmpty()) {
+                top = stack.top();
+                if (top.type == Token::Type::LeftBrace) {
+                    argsCheck = true;
+                    break;
+                }
+                output.push_back(top);
+                stack.removeAt();
+            }
+            if (!argsCheck) {
+                throw SyntaxError("Missing argument separator ',' or left brace '(' in expression");
+            }
+        }
+        else if (token.type == Token::Type::Operator) {
+            Operator* cur = token.value.oper;
+            while (!stack.isEmpty()) {
+                Token top = stack.top();
+                if (top.type == Token::Type::Operator) {
+                    Operator* op = top.value.oper;
+                    if (op->priority > cur->priority ||
+                        (op->priority == cur->priority && cur->assoc == Operator::Associativity::Left)) {
+                        output.push_back(top);
+                        stack.removeAt();
+                    }
+                    else {
+                        break;
+                    }
+                }
+                else if (top.type == Token::Type::Function) {
+                    output.push_back(top);
+                    stack.removeAt();
+                }
+                else {
+                    break;
+                }
+            }
+            stack.push_front(token);
+        }
+        else if (token.type == Token::Type::LeftBrace) {
+            stack.push_front(token);
+        }
+        else if (token.type == Token::Type::RightBrace) {
+            bool bracesCheck = false;
+            while (!stack.isEmpty()) {
+                Token top = stack.top();
+                stack.removeAt();
+                if (top.type == Token::Type::LeftBrace) {
+                    bracesCheck = true;
+                    break;
+                }
+                output.push_back(top);
+            }
+            if (!bracesCheck) {
+                throw SyntaxError("Missing left brace '(' in expression");
+            }
+        }
+    }
+
+    while (!stack.isEmpty()) {
+        Token top = stack.top();
+        stack.removeAt();
+        if (top.type == Token::Type::LeftBrace) {
+            throw SyntaxError("Missing right brace ')' in expression");
+        }
+        output.push_back(top);
+    }
+
+    return output;
+
+}
+
+std::ostream& operator<<(std::ostream& stream, Token token) {
+    if (token.type == Token::Type::Number) {
+        stream << token.value.number;
+    }
+    else if (token.type == Token::Type::LeftBrace) {
+        stream << "(";
+    }
+    else if (token.type == Token::Type::RightBrace) {
+        stream << ")";
+    }
+    else if (token.type == Token::Type::Operator) {
+        stream << token.value.oper->name;
+    }
+    else if (token.type == Token::Type::Function) {
+        stream << token.value.func->name;
+    }
+    else if (token.type == Token::Type::ArgsSep) {
+        stream << ',';
+    }
+    return stream;
+}
+
+double eval(const std::vector<Token>& rpnExpression) {
+    MyStack<double> stack;
+    for (auto&& token : rpnExpression) {
+        if (token.type == Token::Type::Number) {
+            stack.push_front(token.value.number);
+        }
+        else if (token.type == Token::Type::Operator) {
+            if (stack.getSize() < 2) {
+                throw SyntaxError("Not enough operands for operator: " + token.value.oper->name);
+            }
+            double b = stack.top();
+            stack.removeAt();
+            double a = stack.top();
+            stack.removeAt();
+            stack.push_front(token.value.oper->func(a, b));
+        }
+        else if (token.type == Token::Type::Function) {
+            size_t argc = token.value.func->argc;
+            if (stack.getSize() < argc) {
+                throw SyntaxError("Not enough arguments for function: " + token.value.func->name);
+            }
+            vector<double> args;
+            for (size_t i = 0; i < argc; i++) {
+                args.insert(args.begin(), stack.top());
+                stack.removeAt();
+            }
+            stack.push_front(token.value.func->func(args));
+        }
+        else {
+            throw SyntaxError("In RPN met not allowed token: " + std::to_string(static_cast<int>(token.type)));
+        }
+    }
+    if (stack.getSize() > 1) {
+        throw SyntaxError("Calculation finished with stack size greater than 1");
+    }
+    return stack.top();
+}
+double eval(const std::string& expression) {
+        
+    auto tokens = tokenize(expression);
+    auto rpn = shuntingYard(tokens);
+    double result = eval(rpn);
+    return result;
+        
+}
+
+
+
+
+
 
 
 int main()
 {
-    
-  /*  std::string expression;
-    std::cout << "Enter an expression in Reverse Polish Notation: ";
-    std::getline(std::cin, expression);
+    std::string line;
+    std::getline(std::cin, line);
+    auto tokens = tokenize(line);
 
-    double result = evaluateExpression(expression);
-    std::cout << "Postfix expression: " << infixToPostfix(expression) << std::endl;
-    std::cout << "Result: " << result << std::endl;*/
 
-    DoubleLinkedList<int> ms; 
+    std::cout << std::endl;
+
+    try {
+
+        auto rpn = shuntingYard(tokens);
+        std::cout << "Reverse Polish Notation:" << std::endl;
+        for (auto token : rpn) {
+            std::cout << token << " ";
+        }
+        std::cout << std::endl;
+
+        double result = eval(rpn);
+
+        std::cout << "Result: " << result << std::endl;
+
+
+    }
+    catch (exception e) {
+        cout << e.what() << endl;
+        return 0;
+    }
+
+
+    return 0;
+
+
+
+   /* DoubleLinkedList<int> ms; 
 
     ms.push_front(1);
     ms.push_back(12); 
-    ms.removeAt(12); 
+    ms.removeAt(12); */
 
-    return 0;
+ 
     
     
 
