@@ -1,10 +1,13 @@
- #Оценка сложностей алгоритмов 
- 
-##Класс DoubleLinkedList
-https://github.com/DmitryShetinin/algorithms-and-data-structures/blob/469447c57ba9c919889a24f91e1020bff2f50573/lab1.cpp#L32 - O(n) (потому что нам нужно пройти первую или вторую (в зависимости от индекса) листа, соответсвенно, чем больше n(в нашем случае node) тем больше времени потребуется для того чтобы пробежать весь DoubleLinkedList) (Также здесь я добавил мини оптимизацию, так например если брать индыкс который больше чем половины количества элементов, то лист будет начинать переберать элементы с конца (то есть с tail)   )
+# `Класс DoublyLinkedList`
 
-##Класс DynamicArray
-https://github.com/vashasashenka/fluffy-journey/blob/main/alg1.py#L132 - O(n) (потому что, как и в методе выше, нам нужно пробежаться по всему DoubleLinkedList и вывести значение (чем больше n тем больше бегать, отсюда и О(n))
+[push_front](https://github.com/DmitryShetinin/algorithms-and-data-structures/blob/main/lab1.cpp#L73) работает за: $$O(1)$$ потому что - в методе нет ни циклов, ни рекрсий, все команды в методе выполняются за константу, а значит и весь метод будет работать за O(1)
+___
 
-##Класс Stack
-https://github.com/DmitryShetinin/algorithms-and-data-structures/blob/469447c57ba9c919889a24f91e1020bff2f50573/lab1.cpp#L56C10-L56C20 - O(1)(в методе представляется возможность добавлять Node в конец списка, сложность O(1) обосновывается тем что, у нас все действия в функции константные.)
+# `Класс DynamicArray`
+[remove](https://github.com/DmitryShetinin/algorithms-and-data-structures/blob/main/lab1.cpp#L281) работает за: $$O(n)$$, потому что худший случай в данном методе мы получим когда `index != -1`, тогда вызовится метод removeAt в котором вызовится метод IndexTo который работает за $n/2$ но тк константы мы не учитываем то метод IndexTo будет работать за O(n). В итоге мы получаем что итоговая сложность равна O(n + size) то есть O(n)
+(+ size получаем когда проходим цикл 
+в самом методе remove)
+
+___
+# `Функция constructNumber`
+[constructNumber](https://github.com/DmitryShetinin/algorithms-and-data-structures/blob/main/lab1.cpp#L468) работает за: $$O(n)$$ потому что в функции один цикл while который зависит от длины подаваемой в функцию строки.
